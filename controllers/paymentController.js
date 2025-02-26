@@ -2,22 +2,20 @@ const crypto = require("crypto");
 const axios = require("axios");
 const querystring = require("querystring");
 
-// Correct Redirect URL for the payment response
-const REDIRECT_URL = "https://dpay-dev.netlify.app/payment-response";
+// Use the QPay redirect URL from environment variables (or fallback)
+const REDIRECT_URL = process.env.QPAY_REDIRECT_URL;
 
 /**
- * Generates a secure hash for QPay requests based on a fixed field order.
- * QPay documentation specifies the exact order in which fields must be concatenated
- * with the secret key, followed by applying a SHA-256 hash and converting to uppercase.
+ * Generates a secure hash for QPay requests using a fixed field order.
+ * The hash string is built by concatenating the secret key with each field value,
+ * in the order specified by QPay documentation, then applying SHA-256 and converting to uppercase.
  *
  * @param {Object} data - The data object containing all required fields for QPay.
  * @param {string} secretKey - The QPay secret key used for hashing.
  * @returns {string} - The generated secure hash in uppercase.
  */
 const generateSecureHash = (data, secretKey) => {
-  console.log("Raw Data Before Hashing:", data);
-
-  // The specific field order dictated by QPay documentation
+  // Fixed field order per QPay documentation
   const fieldsOrder = [
     "Action",
     "BankID",
@@ -36,16 +34,9 @@ const generateSecureHash = (data, secretKey) => {
 
   let hashString = secretKey;
   fieldsOrder.forEach((field) => {
-    // Append the trimmed field value if it exists, otherwise append an empty string
-    hashString +=
-      data[field] !== undefined && data[field] !== null
-        ? data[field].toString().trim()
-        : "";
+    hashString += data[field] ? data[field].toString().trim() : "";
   });
 
-  console.log("Hash String Before Hashing:", hashString);
-
-  // Create the SHA-256 hash and convert it to uppercase
   return crypto
     .createHash("sha256")
     .update(hashString)
@@ -71,6 +62,15 @@ const generateTransactionDate = () => {
 };
 
 /**
+ * Generates a unique 20-character Payment Unique Number (PUN) using crypto.
+ *
+ * @returns {string} - The generated 20-character PUN.
+ */
+const generatePUN = () => {
+  return crypto.randomBytes(10).toString("hex").substring(0, 20).toUpperCase();
+};
+
+/**
  * Initiates a payment request to QPay by constructing the required fields,
  * generating a secure hash, and making a POST request to the QPay endpoint.
  *
@@ -79,8 +79,6 @@ const generateTransactionDate = () => {
  */
 exports.initiatePayment = async (req, res) => {
   try {
-    console.log("Initiating Payment...");
-
     // Extract essential fields from request body
     const {
       amount,
@@ -92,16 +90,9 @@ exports.initiatePayment = async (req, res) => {
       description,
     } = req.body;
 
-    // Check for missing required fields
-    const requiredFields = [
-      "amount",
-      "bankId",
-      "merchantId",
-      "pun",
-      "description",
-    ];
+    // Validate required fields
+    const requiredFields = ["amount", "bankId", "merchantId", "description"];
     const missingFields = requiredFields.filter((field) => !req.body[field]);
-
     if (missingFields.length > 0) {
       return res.status(400).json({
         status: "error",
@@ -109,25 +100,25 @@ exports.initiatePayment = async (req, res) => {
       });
     }
 
-    // Convert amount to the smallest currency unit (multiply by 100 for ISO format)
-    const formattedAmount = Math.round(parseFloat(amount) * 100).toString();
+    // Use provided PUN if available; otherwise, generate one
+    const truncatedPUN = pun ? pun.trim().substring(0, 20) : generatePUN();
 
-    // Truncate PUN to a maximum of 20 characters as required by QPay
-    const truncatedPUN = pun.trim().substring(0, 20);
+    // Convert amount to the smallest currency unit (e.g., multiply by 100)
+    const formattedAmount = Math.round(parseFloat(amount) * 100).toString();
 
     // Prepare payment data for the QPay request
     const paymentData = {
-      Action: "0", // "0" typically denotes a purchase or sale request in QPay docs
+      Action: "0", // "0" typically denotes a purchase/sale request
       Amount: formattedAmount,
       BankID: bankId.trim(),
       CurrencyCode: "634", // ISO currency code for QAR
-      Lang: language && language.trim() ? language.trim() : "En", // Default to "En" if language is missing
+      ExtraFields_f14: REDIRECT_URL,
+      Lang: language && language.trim() ? language.trim() : "En", // Default to "En" if not provided
       MerchantID: merchantId.trim(),
-      MerchantModuleSessionID: truncatedPUN, // QPay requires both PUN & MerchantModuleSessionID
+      MerchantModuleSessionID: truncatedPUN, // Required: same as PUN for session identification
       PUN: truncatedPUN,
       PaymentDescription: description.trim(),
       Quantity: "1",
-      ExtraFields_f14: REDIRECT_URL,
       TransactionRequestDate: generateTransactionDate(),
       NationalID:
         nationalId && nationalId.trim() !== ""
@@ -135,27 +126,11 @@ exports.initiatePayment = async (req, res) => {
           : "7483885725", // Fallback if not provided
     };
 
-    console.log("Payment Data Fields:");
-    Object.entries(paymentData).forEach(([key, value]) => {
-      console.log(`  ${key}: "${value}"`);
-    });
-
     // Generate the secure hash using the secret key and fixed field order
     paymentData.SecureHash = generateSecureHash(
       paymentData,
       process.env.QPAY_SECRET_KEY.trim()
     );
-
-    console.log("SecureHash Generated:", paymentData.SecureHash);
-    console.log(
-      "Final Payment Data (Sent to QPay):",
-      JSON.stringify(paymentData, null, 2)
-    );
-
-    console.log("Sending Request to QPay:", querystring.stringify(paymentData));
-    console.log("Headers Used:", {
-      "Content-Type": "application/x-www-form-urlencoded",
-    });
 
     // Post the request to QPay
     const qpayResponse = await axios.post(
@@ -164,10 +139,7 @@ exports.initiatePayment = async (req, res) => {
       { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
     );
 
-    console.log("QPay Response:", qpayResponse.data);
-
-    // Return a JSON response to the client with the relevant data
-    res.json({
+    return res.json({
       status: "success",
       redirectUrl: process.env.QPAY_REDIRECT_URL,
       paymentData,
@@ -177,7 +149,7 @@ exports.initiatePayment = async (req, res) => {
       "Payment initiation error:",
       error.response ? error.response.data : error.message
     );
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: "Payment initiation failed",
       details: error.response ? error.response.data : error.message,
@@ -194,21 +166,16 @@ exports.initiatePayment = async (req, res) => {
  */
 exports.handlePaymentResponse = async (req, res) => {
   try {
-    console.log("Handling Payment Response...");
-    console.log("Full Response Data:", req.body);
-
     const responseParams = req.body;
     const receivedSecureHash = responseParams["Response.SecureHash"];
-
     if (!receivedSecureHash) {
-      console.error("Missing Secure Hash in Response");
       return res.status(400).json({
         status: "error",
         message: "Missing Secure Hash in Response",
       });
     }
 
-    // Use fixed field order as specified by QPay documentation for Payment Response
+    // Fixed field order for Payment Response per QPay documentation
     const fieldsOrder = [
       "Response.AcquirerID",
       "Response.Amount",
@@ -233,38 +200,25 @@ exports.handlePaymentResponse = async (req, res) => {
         ? responseParams[field].toString().trim()
         : "";
     });
-    console.log("Hash String for Response:", hashString);
 
-    // Generate secure hash using SHA-256 and convert to uppercase
     const generatedSecureHash = crypto
       .createHash("sha256")
       .update(hashString)
       .digest("hex")
       .toUpperCase();
 
-    console.log("Generated Secure Hash:", generatedSecureHash);
-    console.log("Received Secure Hash:", receivedSecureHash);
-
     if (receivedSecureHash !== generatedSecureHash) {
-      console.error("Secure Hash Validation Failed");
       return res.status(400).json({
         status: "error",
         message: "Invalid secure hash",
       });
     }
 
-    // Extract critical information from the validated QPay response
     const paymentStatus = responseParams["Response.Status"];
     const confirmationID = responseParams["Response.ConfirmationID"];
     const transactionID = responseParams["Response.PUN"];
 
-    console.log("Payment Result:", {
-      transactionID,
-      confirmationID,
-      paymentStatus,
-    });
-
-    res.json({
+    return res.json({
       status: "success",
       data: {
         paymentStatus,
@@ -274,9 +228,14 @@ exports.handlePaymentResponse = async (req, res) => {
     });
   } catch (error) {
     console.error("Payment response handling error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: "Failed to process payment response",
     });
   }
 };
+
+// Export common utility functions in case they are needed elsewhere
+module.exports.generateSecureHash = generateSecureHash;
+module.exports.generateTransactionDate = generateTransactionDate;
+module.exports.generatePUN = generatePUN;

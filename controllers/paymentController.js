@@ -101,9 +101,9 @@ exports.initiatePayment = async (req, res) => {
   try {
     const {
       amount,
-      bankId,
+      bankId = process.env.QPAY_BANK_ID,
       language,
-      merchantId,
+      merchantId = process.env.QPAY_MERCHANT_ID,
       pun,
       nationalId,
       description,

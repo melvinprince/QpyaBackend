@@ -3,7 +3,7 @@ const axios = require("axios");
 const querystring = require("querystring");
 
 // Correct Redirect URL for the payment response
-const REDIRECT_URL = "https://doha-payment.vercel.app/payment-response";
+const REDIRECT_URL = "https://dpay-dev.netlify.app/payment-response";
 
 /**
  * Generates a secure hash for QPay requests based on a fixed field order.

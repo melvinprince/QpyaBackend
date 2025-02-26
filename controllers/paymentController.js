@@ -121,13 +121,13 @@ exports.initiatePayment = async (req, res) => {
       Amount: formattedAmount,
       BankID: bankId.trim(),
       CurrencyCode: "634", // ISO currency code for QAR
-      ExtraFields_f14: REDIRECT_URL,
       Lang: language && language.trim() ? language.trim() : "En", // Default to "En" if language is missing
       MerchantID: merchantId.trim(),
       MerchantModuleSessionID: truncatedPUN, // QPay requires both PUN & MerchantModuleSessionID
       PUN: truncatedPUN,
       PaymentDescription: description.trim(),
       Quantity: "1",
+      ExtraFields_f14: REDIRECT_URL,
       TransactionRequestDate: generateTransactionDate(),
       NationalID:
         nationalId && nationalId.trim() !== ""

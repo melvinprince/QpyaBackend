@@ -16,6 +16,17 @@ app.use(
   })
 );
 
+const axios = require("axios");
+async function logOutboundIP() {
+  try {
+    const res = await axios.get("https://api.ipify.org?format=json");
+    console.log("[DEBUG] Outbound IP is:", res.data.ip);
+  } catch (err) {
+    console.error("[DEBUG] Could not determine outbound IP", err);
+  }
+}
+logOutboundIP();
+
 const PORT = process.env.PORT || 8080;
 console.log(`[DEBUG] Server will run on port: ${PORT}`);
 

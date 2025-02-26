@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const axios = require("axios");
 const querystring = require("querystring");
+require("dotenv").config();
 
 // Use the QPay redirect URL from environment variables (or fallback)
 const REDIRECT_URL = process.env.QPAY_REDIRECT_URL;

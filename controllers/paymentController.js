@@ -208,29 +208,43 @@ exports.handlePaymentResponse = async (req, res) => {
       });
     }
 
-    // Remove SecureHash from the object before we reconstruct the string for validation
-    delete responseParams["Response.SecureHash"];
+    // Use fixed field order as specified by QPay documentation for Payment Response
+    const fieldsOrder = [
+      "Response.AcquirerID",
+      "Response.Amount",
+      "Response.BankID",
+      "Response.CardExpiryDate",
+      "Response.CardHolderName",
+      "Response.CardNumber",
+      "Response.ConfirmationID",
+      "Response.CurrencyCode",
+      "Response.EZConnectResponseDate",
+      "Response.Lang",
+      "Response.MerchantID",
+      "Response.MerchantModuleSessionID",
+      "Response.PUN",
+      "Response.Status",
+      "Response.StatusMessage",
+    ];
 
-    // Sort response parameters alphabetically to recreate the hash string properly
-    const sortedParams = Object.keys(responseParams)
-      .sort()
-      .reduce((acc, key) => {
-        acc[key] = responseParams[key];
-        return acc;
-      }, {});
+    let hashString = process.env.QPAY_SECRET_KEY.trim();
+    fieldsOrder.forEach((field) => {
+      hashString += responseParams[field]
+        ? responseParams[field].toString().trim()
+        : "";
+    });
+    console.log("Hash String for Response:", hashString);
 
-    // Generate secure hash for validation
-    const hashString =
-      process.env.QPAY_SECRET_KEY + Object.values(sortedParams).join("");
+    // Generate secure hash using SHA-256 and convert to uppercase
     const generatedSecureHash = crypto
       .createHash("sha256")
       .update(hashString)
-      .digest("hex");
+      .digest("hex")
+      .toUpperCase();
 
     console.log("Generated Secure Hash:", generatedSecureHash);
     console.log("Received Secure Hash:", receivedSecureHash);
 
-    // Compare the received and generated hash values
     if (receivedSecureHash !== generatedSecureHash) {
       console.error("Secure Hash Validation Failed");
       return res.status(400).json({

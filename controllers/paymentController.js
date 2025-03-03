@@ -7,6 +7,8 @@ require("dotenv").config();
 const REDIRECT_URL = process.env.QPAY_REDIRECT_URL;
 console.log("[DEBUG] REDIRECT_URL set to:", REDIRECT_URL);
 
+const onSuccessRedirect = "https://dpay-dev.netlify.app/payment-response";
+
 /**
  * Generates a secure hash for QPay requests using a fixed field order.
  * The hash string is built by concatenating the secret key with each field value,
@@ -134,7 +136,7 @@ exports.initiatePayment = async (req, res) => {
       Amount: formattedAmount,
       BankID: bankId.trim(),
       CurrencyCode: "634", // ISO code for QAR
-      ExtraFields_f14: REDIRECT_URL,
+      ExtraFields_f14: onSuccessRedirect,
       Lang: language && language.trim() ? language.trim() : "En",
       MerchantID: merchantId.trim(),
       MerchantModuleSessionID: truncatedPUN,
@@ -159,14 +161,11 @@ exports.initiatePayment = async (req, res) => {
     );
     console.log("[DEBUG] Final Payment Data (with SecureHash):", paymentData);
 
-    console.log(
-      "[DEBUG] Sending POST request to QPay endpoint:",
-      process.env.QPAY_REDIRECT_URL
-    );
+    console.log("[DEBUG] Sending POST request to QPay endpoint:", REDIRECT_URL);
     console.log("[DEBUG] Request payload:", querystring.stringify(paymentData));
 
     const qpayResponse = await axios.post(
-      process.env.QPAY_REDIRECT_URL,
+      REDIRECT_URL,
       querystring.stringify(paymentData),
       { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
     );
@@ -174,7 +173,7 @@ exports.initiatePayment = async (req, res) => {
 
     return res.json({
       status: "success",
-      redirectUrl: process.env.QPAY_REDIRECT_URL,
+      redirectUrl: onSuccessRedirect,
       paymentData,
     });
   } catch (error) {
@@ -294,8 +293,3 @@ exports.handlePaymentResponse = async (req, res) => {
     });
   }
 };
-
-// Export common utility functions in case they are needed elsewhere
-module.exports.generateSecureHash = generateSecureHash;
-module.exports.generateTransactionDate = generateTransactionDate;
-module.exports.generatePUN = generatePUN;

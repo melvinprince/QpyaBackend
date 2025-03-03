@@ -10,32 +10,37 @@ console.log("[DEBUG] REDIRECT_URL set to:", REDIRECT_URL);
 const onSuccessRedirect = "https://dpay-dev.netlify.app/payment-response";
 
 /**
- * Generates a secure hash for QPay requests using a fixed field order.
- * The hash string is built by concatenating the secret key with each field value,
- * in the order specified by QPay documentation, then applying SHA-256 and converting to uppercase.
+ * Generates a secure hash for QPay requests.
+ * The hash string is built by concatenating the secret key and
+ * all required fields in alphabetical order.
  *
- * @param {Object} data - The data object containing all required fields for QPay.
+ * Expected order:
+ *   Action, Amount, BankID, CurrencyCode, ExtraFields_f14, Lang, MerchantID,
+ *   MerchantModuleSessionID, NationalID, PaymentDescription, PUN, Quantity, TransactionRequestDate
+ *
+ * @param {Object} data - The data object containing all required fields.
  * @param {string} secretKey - The QPay secret key used for hashing.
  * @returns {string} - The generated secure hash in uppercase.
  */
 const generateSecureHash = (data, secretKey) => {
+  // Alphabetical order of the request fields as per QPay guide
   const fieldsOrder = [
     "Action",
-    "BankID",
-    "MerchantID",
-    "CurrencyCode",
     "Amount",
-    "PUN",
-    "PaymentDescription",
-    "MerchantModuleSessionID",
-    "TransactionRequestDate",
-    "Quantity",
+    "BankID",
+    "CurrencyCode",
     "ExtraFields_f14",
     "Lang",
+    "MerchantID",
+    "MerchantModuleSessionID",
     "NationalID",
+    "PaymentDescription",
+    "PUN",
+    "Quantity",
+    "TransactionRequestDate",
   ];
   console.log(
-    "[DEBUG] Generating secure hash using fixed fields order:",
+    "[DEBUG] Generating secure hash using fields order:",
     fieldsOrder
   );
 
@@ -59,8 +64,6 @@ const generateSecureHash = (data, secretKey) => {
 
 /**
  * Generates the current date-time in ddMMyyyyHHmmss format.
- * This format is specified by QPay for the TransactionRequestDate field.
- *
  * @returns {string} - The formatted date-time string.
  */
 const generateTransactionDate = () => {
@@ -79,7 +82,6 @@ const generateTransactionDate = () => {
 
 /**
  * Generates a unique 20-character Payment Unique Number (PUN) using crypto.
- *
  * @returns {string} - The generated 20-character PUN.
  */
 const generatePUN = () => {
@@ -93,8 +95,9 @@ const generatePUN = () => {
 };
 
 /**
- * Initiates a payment request to QPay by constructing the required fields,
- * generating a secure hash, and returning the data for browser redirection.
+ * Initiates a payment request to QPay.
+ * Constructs the required fields, generates a secure hash using the new field order,
+ * and returns the data for browser redirection.
  *
  * @param {Object} req - Express request object containing payment details in the body.
  * @param {Object} res - Express response object for sending the JSON response.
@@ -140,14 +143,14 @@ exports.initiatePayment = async (req, res) => {
       Lang: language && language.trim() ? language.trim() : "En",
       MerchantID: merchantId.trim(),
       MerchantModuleSessionID: truncatedPUN,
-      PUN: truncatedPUN,
-      PaymentDescription: description.trim(),
-      Quantity: "1",
-      TransactionRequestDate: generateTransactionDate(),
       NationalID:
         nationalId && nationalId.trim() !== ""
           ? nationalId.trim()
           : "7483885725", // Fallback if not provided
+      PUN: truncatedPUN,
+      PaymentDescription: description.trim(),
+      Quantity: "1",
+      TransactionRequestDate: generateTransactionDate(),
     };
 
     console.log("[DEBUG] Payment Data Fields:");
@@ -155,6 +158,7 @@ exports.initiatePayment = async (req, res) => {
       console.log(`  ${key}: "${value}"`);
     });
 
+    // Generate the secure hash using the updated alphabetical order
     paymentData.SecureHash = generateSecureHash(
       paymentData,
       process.env.QPAY_SECRET_KEY.trim()
@@ -163,8 +167,6 @@ exports.initiatePayment = async (req, res) => {
 
     // Instead of making a server-to-server POST call to QPay,
     // return the payment data and the QPay endpoint URL.
-    // This allows the customer's browser to submit the form,
-    // ensuring that the referer header is included.
     console.log("[DEBUG] Returning payment data for browser redirection.");
     return res.json({
       status: "success",
@@ -209,6 +211,7 @@ exports.handlePaymentResponse = async (req, res) => {
       });
     }
 
+    // Use alphabetical order for the response fields
     const fieldsOrder = [
       "Response.AcquirerID",
       "Response.Amount",
@@ -265,11 +268,7 @@ exports.handlePaymentResponse = async (req, res) => {
 
     console.log(
       "[DEBUG] Payment Response Validation successful. Extracted details:",
-      {
-        transactionID,
-        confirmationID,
-        paymentStatus,
-      }
+      { transactionID, confirmationID, paymentStatus }
     );
 
     return res.json({

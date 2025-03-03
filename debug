@@ -1,0 +1,80 @@
+==> Your service is live 🎉
+[DEBUG] Health-check endpoint accessed
+[DEBUG] Initiate Payment called with request body: {
+  amount: '100.00',
+  description: 'test',
+  bankId: 'QPAYPG03',
+  merchantId: 'DB98954'
+}
+[DEBUG] Generated PUN: 7B348F15B410E80EBB25
+[DEBUG] Using PUN: 7B348F15B410E80EBB25
+[DEBUG] Formatted amount (smallest currency unit): 10000
+[DEBUG] Current date: Mon Mar 03 2025 08:57:39 GMT+0000 (Coordinated Universal Time)
+[DEBUG] Formatted TransactionRequestDate: 03032025085739
+[DEBUG] Payment Data Fields:
+  Action: "0"
+  Amount: "10000"
+  BankID: "QPAYPG03"
+  CurrencyCode: "634"
+  ExtraFields_f14: "https://dpay-dev.netlify.app/payment-response"
+  Lang: "En"
+  MerchantID: "DB98954"
+  MerchantModuleSessionID: "7B348F15B410E80EBB25"
+  PUN: "7B348F15B410E80EBB25"
+  PaymentDescription: "test"
+  Quantity: "1"
+  TransactionRequestDate: "03032025085739"
+  NationalID: "7483885725"
+[DEBUG] Generating secure hash using fixed fields order: [
+  'Action',
+  'BankID',
+  'MerchantID',
+  'CurrencyCode',
+  'Amount',
+  'PUN',
+  'PaymentDescription',
+  'MerchantModuleSessionID',
+  'TransactionRequestDate',
+  'Quantity',
+  'ExtraFields_f14',
+  'Lang',
+  'NationalID'
+]
+[DEBUG] Field "Action" value: "0"
+[DEBUG] Field "BankID" value: "QPAYPG03"
+[DEBUG] Field "MerchantID" value: "DB98954"
+[DEBUG] Field "CurrencyCode" value: "634"
+[DEBUG] Field "Amount" value: "10000"
+[DEBUG] Field "PUN" value: "7B348F15B410E80EBB25"
+[DEBUG] Field "PaymentDescription" value: "test"
+[DEBUG] Field "MerchantModuleSessionID" value: "7B348F15B410E80EBB25"
+[DEBUG] Field "TransactionRequestDate" value: "03032025085739"
+[DEBUG] Field "Quantity" value: "1"
+[DEBUG] Field "ExtraFields_f14" value: "https://dpay-dev.netlify.app/payment-response"
+[DEBUG] Field "Lang" value: "En"
+[DEBUG] Field "NationalID" value: "7483885725"
+[DEBUG] Hash string before hashing: wFof64+wA6njo2gw0QPAYPG03DB98954634100007B348F15B410E80EBB25test7B348F15B410E80EBB25030320250857391https://dpay-dev.netlify.app/payment-responseEn7483885725
+[DEBUG] Generated secure hash: F4160DE1D43E05A6B17788161EEC590E08FFA3664019DCDA27F0B3EA1B617B6A
+[DEBUG] Final Payment Data (with SecureHash): {
+  Action: '0',
+  Amount: '10000',
+  BankID: 'QPAYPG03',
+  CurrencyCode: '634',
+  ExtraFields_f14: 'https://dpay-dev.netlify.app/payment-response',
+  Lang: 'En',
+  MerchantID: 'DB98954',
+  MerchantModuleSessionID: '7B348F15B410E80EBB25',
+  PUN: '7B348F15B410E80EBB25',
+  PaymentDescription: 'test',
+  Quantity: '1',
+  TransactionRequestDate: '03032025085739',
+  NationalID: '7483885725',
+  SecureHash: 'F4160DE1D43E05A6B17788161EEC590E08FFA3664019DCDA27F0B3EA1B617B6A'
+}
+[DEBUG] Sending POST request to QPay endpoint: https://pguat.qcb.gov.qa/qcb-pg/api/gateway/2.0
+[DEBUG] Request payload: Action=0&Amount=10000&BankID=QPAYPG03&CurrencyCode=634&ExtraFields_f14=https://dpay-dev.netlify.app/payment-response&Lang=En&MerchantID=DB98954&MerchantModuleSessionID=7B348F15B410E80EBB25&PUN=7B348F15B410E80EBB25&PaymentDescription=test&Quantity=1&TransactionRequestDate=03032025085739&NationalID=7483885725&SecureHash=F4160DE1D43E05A6B17788161EEC590E08FFA3664019DCDA27F0B3EA1B617B6A
+[DEBUG] Payment initiation error: EZConnect-0008
+
+
+
+Request payload: Action=0&Amount=10000&BankID=QPAYPG03&CurrencyCode=634&ExtraFields_f14=https://dpay-dev.netlify.app%2Fpayment-response&Lang=En&MerchantID=DB98954&MerchantModuleSessionID=C25223F2A90382E73868&PUN=C25223F2A90382E73868&PaymentDescription=test&Quantity=1&TransactionRequestDate=03032025091028&NationalID=7483885725&SecureHash=67754336275AF0235DA0FF5D72D6557637FC79A1DAC4DAD411ED069E1198C6EF

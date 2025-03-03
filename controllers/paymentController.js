@@ -94,7 +94,7 @@ const generatePUN = () => {
 
 /**
  * Initiates a payment request to QPay by constructing the required fields,
- * generating a secure hash, and making a POST request to the QPay endpoint.
+ * generating a secure hash, and returning the data for browser redirection.
  *
  * @param {Object} req - Express request object containing payment details in the body.
  * @param {Object} res - Express response object for sending the JSON response.
@@ -161,19 +161,14 @@ exports.initiatePayment = async (req, res) => {
     );
     console.log("[DEBUG] Final Payment Data (with SecureHash):", paymentData);
 
-    console.log("[DEBUG] Sending POST request to QPay endpoint:", REDIRECT_URL);
-    console.log("[DEBUG] Request payload:", querystring.stringify(paymentData));
-
-    const qpayResponse = await axios.post(
-      REDIRECT_URL,
-      querystring.stringify(paymentData),
-      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-    );
-    console.log("[DEBUG] QPay response received:", qpayResponse.data);
-
+    // Instead of making a server-to-server POST call to QPay,
+    // return the payment data and the QPay endpoint URL.
+    // This allows the customer's browser to submit the form,
+    // ensuring that the referer header is included.
+    console.log("[DEBUG] Returning payment data for browser redirection.");
     return res.json({
       status: "success",
-      redirectUrl: onSuccessRedirect,
+      redirectUrl: REDIRECT_URL,
       paymentData,
     });
   } catch (error) {

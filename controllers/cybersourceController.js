@@ -298,24 +298,73 @@ exports.initiateCyberSourcePayment = async (req, res) => {
 //   }
 // };
 
+// exports.paymentResponse = async (req, res) => {
+//   console.log(req.body);
+//   try {
+//     const fields = { ...req.body };
+//     const responseSignature = fields.signature;
+//     delete fields.signature;
+//     const signedNames = fields.signed_field_names.split(",");
+//     const dataToSign = {};
+//     signedNames.forEach((field) => {
+//       dataToSign[field] = fields[field];
+//     });
+//     const computedSignature = sign(dataToSign, CYBERSOURCE_SECRET_KEY);
+//
+//     if (computedSignature === responseSignature) {
+//       const decision = fields.decision;
+//       console.log("[paymentResponse] Valid signature. Decision:", decision);
+//
+//       // Redirect user to frontend with status & message
+//       return res.redirect(
+//         `https://dpay-dev.netlify.app/payment-response?status=${decision}&message=Transaction ${decision}`
+//       );
+//     } else {
+//       console.error("[paymentResponse] Signature mismatch!");
+//       return res.redirect(
+//         "https://dpay-dev.netlify.app/payment-response?status=failed&message=Invalid Signature"
+//       );
+//     }
+//   } catch (error) {
+//     console.error("[paymentResponse] Error:", error);
+//     return res.redirect(
+//       "https://dpay-dev.netlify.app/payment-response?status=error&message=Processing Error"
+//     );
+//   }
+// };
+
 exports.paymentResponse = async (req, res) => {
-  console.log(req.body);
+  console.log("Cybersource Response Received:", req.body);
+
   try {
     const fields = { ...req.body };
+
+    if (!fields.signed_field_names) {
+      console.error(
+        "[paymentResponse] Missing signed_field_names in response."
+      );
+      return res.redirect(
+        "https://dpay-dev.netlify.app/payment-response?status=error&message=No Response Data"
+      );
+    }
+
     const responseSignature = fields.signature;
     delete fields.signature;
-    const signedNames = fields.signed_field_names.split(",");
+
+    const signedNames = fields.signed_field_names
+      ? fields.signed_field_names.split(",")
+      : [];
     const dataToSign = {};
     signedNames.forEach((field) => {
       dataToSign[field] = fields[field];
     });
+
     const computedSignature = sign(dataToSign, CYBERSOURCE_SECRET_KEY);
 
     if (computedSignature === responseSignature) {
-      const decision = fields.decision;
+      const decision = fields.decision || "UNKNOWN";
       console.log("[paymentResponse] Valid signature. Decision:", decision);
 
-      // Redirect user to frontend with status & message
       return res.redirect(
         `https://dpay-dev.netlify.app/payment-response?status=${decision}&message=Transaction ${decision}`
       );

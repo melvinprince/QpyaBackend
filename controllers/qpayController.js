@@ -153,6 +153,7 @@
 //   }
 // };
 
+const { triggerAsyncId } = require("async_hooks");
 const crypto = require("crypto");
 require("dotenv").config();
 
@@ -255,6 +256,8 @@ exports.initiateQPayPayment = async (req, res) => {
 };
 
 exports.handleQPayResponse = async (req, res) => {
+  console.log("triggered");
+
   try {
     // Check if the request is a POST request. If not, redirect to the success page.
     if (req.method !== "POST") {

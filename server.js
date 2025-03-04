@@ -8,13 +8,21 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-app.use(
-  cors({
-    origin: "https://dpay-dev.netlify.app",
-    credentials: true,
-    methods: ["GET", "POST"],
-  })
-);
+process.env.environment === "development"
+  ? app.use(
+      cors({
+        origin: "*",
+        credentials: true,
+        methods: ["GET", "POST"],
+      })
+    )
+  : app.use(
+      cors({
+        origin: "https://dpay-dev.netlify.app",
+        credentials: true,
+        methods: ["GET", "POST"],
+      })
+    );
 
 ///To get the server Ip Address
 // const axios = require("axios");

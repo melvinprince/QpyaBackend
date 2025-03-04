@@ -231,11 +231,9 @@ exports.initiateCyberSourcePayment = async (req, res) => {
       locale: "en-us",
       device_fingerprint_id,
       override_custom_cancel_page:
-        // "http://localhost:8000/payment/cybersource/response",
-        "https://dpay-dev.netlify.app/payment-response",
+        "https://qpyabackend.onrender.com/payment/cybersource/response",
       override_custom_receipt_page:
-        // "http://localhost:8000/payment/cybersource/response",
-        "https://dpay-dev.netlify.app/payment-response",
+        "https://qpyabackend.onrender.com/payment/cybersource/response",
     };
 
     const signature = sign(fieldsToSign, CYBERSOURCE_SECRET_KEY);
@@ -260,9 +258,48 @@ exports.initiateCyberSourcePayment = async (req, res) => {
   }
 };
 
+// exports.paymentResponse = async (req, res) => {
+//   console.log(req.body);
+//
+//   try {
+//     const fields = { ...req.body };
+//     const responseSignature = fields.signature;
+//     delete fields.signature;
+//     const signedNames = fields.signed_field_names.split(",");
+//     const dataToSign = {};
+//     signedNames.forEach((field) => {
+//       dataToSign[field] = fields[field];
+//     });
+//     const computedSignature = sign(dataToSign, CYBERSOURCE_SECRET_KEY);
+//
+//     if (computedSignature === responseSignature) {
+//       const decision = fields.decision;
+//       console.log("[paymentResponse] Valid signature. Decision:", decision);
+//
+//       return res.status(200).json({
+//         success: true,
+//         message: `Payment ${decision}`,
+//         data: fields,
+//       });
+//     } else {
+//       console.error("[paymentResponse] Signature mismatch!");
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid signature in payment response.",
+//       });
+//     }
+//   } catch (error) {
+//     console.error("[paymentResponse] Error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Error processing payment response.",
+//       error: error.message,
+//     });
+//   }
+// };
+
 exports.paymentResponse = async (req, res) => {
   console.log(req.body);
-
   try {
     const fields = { ...req.body };
     const responseSignature = fields.signature;
@@ -278,24 +315,20 @@ exports.paymentResponse = async (req, res) => {
       const decision = fields.decision;
       console.log("[paymentResponse] Valid signature. Decision:", decision);
 
-      return res.status(200).json({
-        success: true,
-        message: `Payment ${decision}`,
-        data: fields,
-      });
+      // Redirect user to frontend with status & message
+      return res.redirect(
+        `https://dpay-dev.netlify.app/payment-response?status=${decision}&message=Transaction ${decision}`
+      );
     } else {
       console.error("[paymentResponse] Signature mismatch!");
-      return res.status(400).json({
-        success: false,
-        message: "Invalid signature in payment response.",
-      });
+      return res.redirect(
+        "https://dpay-dev.netlify.app/payment-response?status=failed&message=Invalid Signature"
+      );
     }
   } catch (error) {
     console.error("[paymentResponse] Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error processing payment response.",
-      error: error.message,
-    });
+    return res.redirect(
+      "https://dpay-dev.netlify.app/payment-response?status=error&message=Processing Error"
+    );
   }
 };

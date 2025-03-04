@@ -255,76 +255,6 @@ exports.initiateQPayPayment = async (req, res) => {
   }
 };
 
-// exports.handleQPayResponse = async (req, res) => {
-//   console.log("triggered");
-//
-//   try {
-//     // Check if the request is a POST request. If not, redirect to the success page.
-//     if (req.method !== "POST") {
-//       return res.redirect(
-//         `/payment-response?status=${req.query["Response.Status"]}&message=${
-//           req.query["Response.StatusMessage"] || "Redirected"
-//         }`
-//       );
-//     }
-//
-//     const responseParams = req.body;
-//     const receivedSecureHash = responseParams["Response.SecureHash"];
-//
-//     if (!receivedSecureHash) {
-//       return res
-//         .status(400)
-//         .json({ status: "error", message: "Missing Secure Hash in Response" });
-//     }
-//
-//     const fieldsOrder = [
-//       "Response.AcquirerID",
-//       "Response.Amount",
-//       "Response.BankID",
-//       "Response.CardExpiryDate",
-//       "Response.CardHolderName",
-//       "Response.CardNumber",
-//       "Response.ConfirmationID",
-//       "Response.CurrencyCode",
-//       "Response.EZConnectResponseDate",
-//       "Response.Lang",
-//       "Response.MerchantID",
-//       "Response.MerchantModuleSessionID",
-//       "Response.PUN",
-//       "Response.Status",
-//       "Response.StatusMessage",
-//     ];
-//
-//     let hashString = process.env.QPAY_SECRET_KEY;
-//     fieldsOrder.forEach(
-//       (field) => (hashString += (responseParams[field] || "").trim())
-//     );
-//
-//     const generatedSecureHash = crypto
-//       .createHash("sha256")
-//       .update(hashString)
-//       .digest("hex")
-//       .toUpperCase();
-//
-//     if (receivedSecureHash !== generatedSecureHash) {
-//       return res
-//         .status(400)
-//         .json({ status: "error", message: "Invalid secure hash" });
-//     }
-//
-//     // Redirect to the success or failure page with query parameters
-//     const redirectUrl = `/payment-response?status=${responseParams["Response.Status"]}&message=${responseParams["Response.StatusMessage"]}`;
-//     return res.redirect(redirectUrl);
-//   } catch (error) {
-//     console.error("Error handling QPay response:", error);
-//     return res.redirect(
-//       `/payment-response?status=error&message=${encodeURIComponent(
-//         "Failed to process payment response"
-//       )}`
-//     );
-//   }
-// };
-
 exports.handleQPayResponse = async (req, res) => {
   console.log("QPay Response Received:", JSON.stringify(req.body, null, 2));
 
@@ -363,9 +293,14 @@ exports.handleQPayResponse = async (req, res) => {
     ];
 
     let hashString = process.env.QPAY_SECRET_KEY;
-    fieldsOrder.forEach(
-      (field) => (hashString += (responseParams[field] || "").trim())
-    );
+    fieldsOrder.forEach((field) => {
+      let value = (responseParams[field] || "").trim();
+      // Replace spaces with '+' for fields that contain "Message"
+      if (field.toLowerCase().includes("message")) {
+        value = value.replace(/ /g, "+");
+      }
+      hashString += value;
+    });
 
     const generatedSecureHash = crypto
       .createHash("sha256")

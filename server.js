@@ -10,7 +10,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "*",
+    origin: "https://dpay-dev.netlify.app/",
     credentials: true,
     methods: ["GET", "POST"],
   })

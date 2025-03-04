@@ -370,8 +370,7 @@ exports.handleQPayResponse = async (req, res) => {
     const generatedSecureHash = crypto
       .createHash("sha256")
       .update(hashString)
-      .digest("hex")
-      .toUpperCase();
+      .digest("hex");
 
     if (receivedSecureHash !== generatedSecureHash) {
       console.error(

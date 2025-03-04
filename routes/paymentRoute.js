@@ -1,8 +1,15 @@
 const express = require("express");
-const Paymentrouter = express.Router();
-const paymentController = require("../controllers/paymentController");
+const router = express.Router();
+const qpayController = require("../controllers/qpayController");
+const cybersourceController = require("../controllers/cybersourceController");
 
-Paymentrouter.post("/request", paymentController.initiatePayment);
-Paymentrouter.post("/response", paymentController.handlePaymentResponse);
+router.post("/qpay/request", qpayController.initiateQPayPayment);
+router.post("/qpay/response", qpayController.handleQPayResponse);
 
-module.exports = Paymentrouter;
+router.post(
+  "/cybersource/request",
+  cybersourceController.initiateCyberSourcePayment
+);
+router.post("/cybersource/response", cybersourceController.paymentResponse);
+
+module.exports = router;

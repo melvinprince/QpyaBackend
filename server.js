@@ -10,29 +10,30 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: "https://dpay-dev.netlify.app",
+    origin: "*",
     credentials: true,
     methods: ["GET", "POST"],
   })
 );
 
-const axios = require("axios");
-async function logOutboundIP() {
-  try {
-    const res = await axios.get("https://api.ipify.org?format=json");
-    console.log("[DEBUG - Outbound] Outbound IP is:", res.data.ip);
-  } catch (err) {
-    console.error("[DEBUG] Could not determine outbound IP", err);
-  }
-}
-logOutboundIP();
+///To get the server Ip Address
+// const axios = require("axios");
+// async function logOutboundIP() {
+//   try {
+//     const res = await axios.get("https://api.ipify.org?format=json");
+//     console.log("[DEBUG - Outbound] Outbound IP is:", res.data.ip);
+//   } catch (err) {
+//     console.error("[DEBUG] Could not determine outbound IP", err);
+//   }
+// }
+// logOutboundIP();
 
 const PORT = process.env.PORT || 8080;
-console.log(`[DEBUG] Server will run on port: ${PORT}`);
+// console.log(`[DEBUG] Server will run on port: ${PORT}`);
 
 // Mount payment routes under /payment
 app.use("/payment", paymentRouter);
-console.log("[DEBUG] Payment routes mounted at /payment");
+// console.log("[DEBUG] Payment routes mounted at /payment");
 
 // Health-check endpoint
 app.get("/", (req, res) => {

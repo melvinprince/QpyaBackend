@@ -230,8 +230,10 @@ exports.initiateCyberSourcePayment = async (req, res) => {
       currency,
       locale: "en-us",
       device_fingerprint_id,
-      override_custom_cancel_page: "http://localhost:5173/payment-response", // Custom cancel page
-      override_custom_receipt_page: "http://localhost:5173/payment-response", // Custom receipt page
+      override_custom_cancel_page:
+        "https://dpay-dev.netlify.app/payment-response", // Custom cancel page
+      override_custom_receipt_page:
+        "https://dpay-dev.netlify.app/payment-response", // Custom receipt page
     };
 
     const signature = sign(fieldsToSign, CYBERSOURCE_SECRET_KEY);
